@@ -415,7 +415,7 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     # Encode form_data as base64 in legacy API requests to bypass firewall
     # detection of JavaScript code as potential security threats.
     # Enable this if your firewall blocks requests containing JavaScript code.
-    "ENCODE_FORM_DATA_BASE64": False,
+    "ENCODE_FORM_DATA_BASE64": True,
     "KV_STORE": False,  # deprecated
     # When this feature is enabled, nested types in Presto will be
     # expanded into extra columns and/or arrays. This is experimental,
