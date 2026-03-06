@@ -25,6 +25,8 @@ import {
   SupersetClientClass,
   QueryFormData,
   Datasource,
+  FeatureFlag,
+  isFeatureEnabled,
 } from '../..';
 import getChartBuildQueryRegistry from '../registries/ChartBuildQueryRegistrySingleton';
 import getChartMetadataRegistry from '../registries/ChartMetadataRegistrySingleton';
@@ -107,18 +109,51 @@ export default class ChartClient {
       const { useLegacyApi } = metaDataRegistry.get(visType)!;
       const buildQuery =
         (await buildQueryRegistry.get(visType)) ?? (() => formData);
+      
+      /**
+       * Helper to encode entire form_data as base64 to bypass firewall blocking.
+       * This prevents firewall from detecting JavaScript code in fields like 
+       * js_tooltip, js_onclick_href, js_data_mutator as code injection.
+       * Controlled by ENCODE_FORM_DATA_BASE64 feature flag.
+       */
+      const encodeFormData = (data: any): any => {
+        if (!isFeatureEnabled(FeatureFlag.EncodeFormDataBase64)) {
+          return data;
+        }
+        try {
+          const jsonString = JSON.stringify(data);
+          return btoa(jsonString);
+        } catch (error) {
+          // If encoding fails, return original data
+          // eslint-disable-next-line no-console
+          console.error('Failed to encode form_data:', error);
+          return data;
+        }
+      };
+
+      const builtQuery = buildQuery(formData);
+      
+      const useEncoding = isFeatureEnabled(FeatureFlag.EncodeFormDataBase64);
       const requestConfig: RequestConfig = useLegacyApi
-        ? {
-            endpoint: '/superset/explore_json/',
-            postPayload: {
-              form_data: buildQuery(formData),
-            },
-            ...options,
-          }
+        ? useEncoding
+          ? {
+              endpoint: '/superset/explore_json/',
+              postPayload: {
+                form_data_encoded: encodeFormData(builtQuery),
+              },
+              ...options,
+            }
+          : {
+              endpoint: '/superset/explore_json/',
+              postPayload: {
+                form_data: builtQuery,
+              },
+              ...options,
+            }
         : {
             endpoint: '/api/v1/chart/data',
             jsonPayload: {
-              query_context: buildQuery(formData),
+              query_context: builtQuery,
             },
             ...options,
           };

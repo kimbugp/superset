@@ -16,6 +16,7 @@
 # under the License.
 import contextlib
 import logging
+from base64 import b64decode
 from collections import defaultdict
 from functools import wraps
 from typing import Any, Callable, DefaultDict, Optional, Union
@@ -57,6 +58,24 @@ stats_logger = app.config["STATS_LOGGER"]
 REJECTED_FORM_DATA_KEYS: list[str] = []
 if not feature_flag_manager.is_feature_enabled("ENABLE_JAVASCRIPT_CONTROLS"):
     REJECTED_FORM_DATA_KEYS = ["js_tooltip", "js_onclick_href", "js_data_mutator"]
+
+
+def decode_form_data(request_data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Decode base64-encoded form_data to bypass firewall detection.
+    If form_data_encoded is present, decode it and use it as form_data.
+    """
+    if "form_data_encoded" in request_data:
+        try:
+            decoded_json = b64decode(request_data["form_data_encoded"]).decode('utf-8')
+            decoded_data = json.loads(decoded_json)
+            # Replace encoded form_data with decoded version
+            request_data = {**request_data, "form_data": json.dumps(decoded_data)}
+            # Remove the encoded field
+            del request_data["form_data_encoded"]
+        except Exception as ex:  # pylint: disable=broad-except
+            logger.warning(f"Failed to decode form_data_encoded: {ex}")
+    return request_data
 
 
 def sanitize_datasource_data(datasource_data: dict[str, Any]) -> dict[str, Any]:
@@ -151,6 +170,9 @@ def get_form_data(
     form_data: dict[str, Any] = initial_form_data or {}
 
     if has_request_context():
+        # Decode base64-encoded form_data if present (to bypass firewall)
+        request_form_dict = decode_form_data(dict(request.form.items()))
+        
         # chart data API requests are JSON
         request_json_data = (
             request.json["queries"][0]
@@ -160,7 +182,7 @@ def get_form_data(
 
         add_sqllab_custom_filters(form_data)
 
-        request_form_data = request.form.get("form_data")
+        request_form_data = request_form_dict.get("form_data")
         request_args_data = request.args.get("form_data")
         if request_json_data:
             form_data.update(request_json_data)
