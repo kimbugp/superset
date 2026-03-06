@@ -412,6 +412,10 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     # geospatial ones) by inputting javascript in controls. This exposes
     # an XSS security vulnerability
     "ENABLE_JAVASCRIPT_CONTROLS": False,  # deprecated
+    # Encode form_data as base64 in legacy API requests to bypass firewall
+    # detection of JavaScript code as potential security threats.
+    # Enable this if your firewall blocks requests containing JavaScript code.
+    "ENCODE_FORM_DATA_BASE64": False,
     "KV_STORE": False,  # deprecated
     # When this feature is enabled, nested types in Presto will be
     # expanded into extra columns and/or arrays. This is experimental,

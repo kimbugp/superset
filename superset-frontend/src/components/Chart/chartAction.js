@@ -136,10 +136,36 @@ const legacyChartDataRequest = async (
       ? { dashboard_id: requestParams.dashboard_id }
       : {},
   });
+  
+  /**
+   * Optionally encode entire form_data as base64 to bypass firewall blocking.
+   * This prevents firewall from detecting JavaScript code in fields like 
+   * js_tooltip, js_onclick_href, js_data_mutator as code injection.
+   * Controlled by ENCODE_FORM_DATA_BASE64 feature flag.
+   */
+  const encodeFormData = data => {
+    if (!isFeatureEnabled(FeatureFlag.EncodeFormDataBase64)) {
+      return data;
+    }
+    try {
+      const jsonString = JSON.stringify(data);
+      return btoa(jsonString);
+    } catch (error) {
+      // If encoding fails, return original data
+      console.error('Failed to encode form_data:', error);
+      return data;
+    }
+  };
+  
+  const encodedFormData = encodeFormData(formData);
+  const postPayload = isFeatureEnabled(FeatureFlag.EncodeFormDataBase64)
+    ? { form_data_encoded: encodedFormData }
+    : { form_data: formData };
+  
   const querySettings = {
     ...requestParams,
     url,
-    postPayload: { form_data: formData },
+    postPayload,
     parseMethod,
   };
 
