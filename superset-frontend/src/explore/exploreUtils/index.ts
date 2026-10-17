@@ -29,6 +29,7 @@ import {
   SupersetClient,
   SetDataMaskHook,
   JsonObject,
+  formDataParam,
 } from '@superset-ui/core';
 import { availableDomains } from 'src/utils/hostNamesConfig';
 import { safeStringify } from 'src/utils/safeStringify';
@@ -393,9 +394,11 @@ export const exportChart = async ({
     });
   } else {
     // Fallback to original behavior for non-streaming exports
-    SupersetClient.postForm(url as string, {
-      form_data: safeStringify(payload),
-    });
+    // Opareta: base64-encoded when ENCODE_FORM_DATA_BASE64 is enabled
+    SupersetClient.postForm(
+      url as string,
+      formDataParam(safeStringify(payload)),
+    );
   }
 };
 

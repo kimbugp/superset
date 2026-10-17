@@ -60,6 +60,7 @@ from superset.utils.core import (
 from superset.utils.decorators import logs_context
 from superset.views.base import CsvResponse, generate_download_headers, XlsxResponse
 from superset.views.base_api import statsd_metrics
+from superset.views.utils import get_request_form_data
 
 if TYPE_CHECKING:
     from superset.common.query_context import QueryContext
@@ -248,10 +249,10 @@ class ChartDataRestApi(ChartRestApi):
         json_body = None
         if request.is_json:
             json_body = request.json
-        elif request.form.get("form_data"):
+        elif request_form_data := get_request_form_data():
             # CSV export submits regular form data
             with contextlib.suppress(TypeError, json.JSONDecodeError):
-                json_body = json.loads(request.form["form_data"])
+                json_body = json.loads(request_form_data)
         if json_body is None:
             return self.response_400(message=_("Request is not JSON"))
 

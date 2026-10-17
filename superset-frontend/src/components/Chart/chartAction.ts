@@ -30,6 +30,8 @@ import {
   DataMask,
   DatasourceType,
   LatestQueryFormData,
+  utf8ToBase64,
+  FORM_DATA_ENCODED_KEY,
 } from '@superset-ui/core';
 import { t } from '@apache-superset/core/translation';
 import type { ControlStateMapping } from '@superset-ui/chart-controls';
@@ -252,7 +254,9 @@ export interface RequestParams {
 // Query settings type
 export interface QuerySettings extends RequestParams {
   url?: string;
-  postPayload?: { form_data: QueryFormData | LatestQueryFormData };
+  postPayload?:
+    | { form_data: QueryFormData | LatestQueryFormData }
+    | { form_data_encoded: string };
   parseMethod?: string;
   headers?: Record<string, string>;
   body?: string;
@@ -432,7 +436,10 @@ const legacyChartDataRequest = async (
   const querySettings: QuerySettings = {
     ...requestParams,
     url: url ?? undefined,
-    postPayload: { form_data: formData },
+    // Opareta: see ENCODE_FORM_DATA_BASE64 (superset-ui-core formDataEncoding)
+    postPayload: isFeatureEnabled(FeatureFlag.EncodeFormDataBase64)
+      ? { [FORM_DATA_ENCODED_KEY]: utf8ToBase64(JSON.stringify(formData)) }
+      : { form_data: formData },
     parseMethod,
   };
 

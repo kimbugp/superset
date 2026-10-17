@@ -25,6 +25,10 @@ import {
   SupersetClientClass,
   QueryFormData,
   Datasource,
+  FeatureFlag,
+  isFeatureEnabled,
+  utf8ToBase64,
+  FORM_DATA_ENCODED_KEY,
 } from '../..';
 import getChartBuildQueryRegistry from '../registries/ChartBuildQueryRegistrySingleton';
 import getChartMetadataRegistry from '../registries/ChartMetadataRegistrySingleton';
@@ -110,9 +114,13 @@ export default class ChartClient {
       const requestConfig: RequestConfig = useLegacyApi
         ? {
             endpoint: '/superset/explore_json/',
-            postPayload: {
-              form_data: buildQuery(formData),
-            },
+            postPayload: isFeatureEnabled(FeatureFlag.EncodeFormDataBase64)
+              ? {
+                  [FORM_DATA_ENCODED_KEY]: utf8ToBase64(
+                    JSON.stringify(buildQuery(formData)),
+                  ),
+                }
+              : { form_data: buildQuery(formData) },
             ...options,
           }
         : {

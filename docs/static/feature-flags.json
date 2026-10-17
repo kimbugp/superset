@@ -312,6 +312,13 @@
         "category": "runtime_config"
       },
       {
+        "name": "ENCODE_FORM_DATA_BASE64",
+        "default": false,
+        "lifecycle": "stable",
+        "description": "Opareta fork: send form_data base64-encoded as form_data_encoded so on-prem network firewalls do not drop requests containing SQL/JavaScript. See superset.views.utils.get_request_form_data.",
+        "category": "runtime_config"
+      },
+      {
         "name": "ESCAPE_MARKDOWN_HTML",
         "default": false,
         "lifecycle": "stable",
