@@ -17,7 +17,7 @@
  * under the License.
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { SupersetClient } from '@superset-ui/core';
+import { SupersetClient, formDataParam } from '@superset-ui/core';
 import { ExportStatus, StreamingProgress } from './StreamingExportModal';
 import { makeUrl } from 'src/utils/pathUtils';
 import { applicationRoot } from 'src/utils/getBootstrapData';
@@ -122,8 +122,9 @@ const createFetchRequest = async (
     // SQL Lab export - pass client_id directly
     formParams.client_id = String(payload.client_id);
   } else {
-    // Chart export - wrap payload in form_data
-    formParams.form_data = JSON.stringify(payload);
+    // Chart export - wrap payload in form_data (base64-encoded under
+    // form_data_encoded when ENCODE_FORM_DATA_BASE64 is enabled - Opareta)
+    Object.assign(formParams, formDataParam(JSON.stringify(payload)));
   }
 
   return {

@@ -697,6 +697,12 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     # @lifecycle: stable
     # @category: runtime_config
     "CACHE_QUERY_BY_USER": False,
+    # Opareta fork: send form_data base64-encoded as form_data_encoded so
+    # on-prem network firewalls do not drop requests containing SQL/JavaScript.
+    # See superset.views.utils.get_request_form_data.
+    # @lifecycle: stable
+    # @category: runtime_config
+    "ENCODE_FORM_DATA_BASE64": False,
     # Enables CSS Templates in Settings menu and dashboard forms
     # @lifecycle: stable
     # @category: runtime_config

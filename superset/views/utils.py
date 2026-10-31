@@ -14,8 +14,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import binascii
 import contextlib
 import logging
+from base64 import b64decode
 from collections import defaultdict
 from functools import wraps
 from typing import Any, Callable, DefaultDict, Optional, Union
@@ -61,6 +63,26 @@ stats_logger = app.config["STATS_LOGGER"]
 REJECTED_FORM_DATA_KEYS: list[str] = []
 if not feature_flag_manager.is_feature_enabled("ENABLE_JAVASCRIPT_CONTROLS"):
     REJECTED_FORM_DATA_KEYS = ["js_tooltip", "js_onclick_href", "js_data_mutator"]
+
+FORM_DATA_ENCODED_KEY = "form_data_encoded"
+
+
+def get_request_form_data() -> str | None:
+    """
+    Opareta fork patch: return the request's form_data JSON string.
+
+    Some on-prem network firewalls drop form-encoded requests whose form_data
+    contains SQL/JavaScript, so with ENCODE_FORM_DATA_BASE64 enabled the
+    frontend sends it base64-encoded (UTF-8) under ``form_data_encoded``
+    instead. The value may be JSON-quoted, since SupersetClient's postPayload
+    stringifies every field.
+    """
+    if encoded := request.form.get(FORM_DATA_ENCODED_KEY):
+        try:
+            return b64decode(encoded.strip().strip('"'), validate=True).decode("utf-8")
+        except (binascii.Error, UnicodeDecodeError) as ex:
+            logger.warning("Failed to decode %s: %s", FORM_DATA_ENCODED_KEY, ex)
+    return request.form.get("form_data")
 
 
 def redirect_to_login(next_target: str | None = None) -> FlaskResponse:
@@ -204,7 +226,7 @@ def get_form_data(
 
         add_sqllab_custom_filters(form_data)
 
-        request_form_data = request.form.get("form_data")
+        request_form_data = get_request_form_data()
         request_args_data = request.args.get("form_data")
         if first_query:
             form_data.update(first_query)

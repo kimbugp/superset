@@ -48,6 +48,8 @@ export enum FeatureFlag {
   EmbeddedSuperset = 'EMBEDDED_SUPERSET',
   EnableAdvancedDataTypes = 'ENABLE_ADVANCED_DATA_TYPES',
   EnableExtensions = 'ENABLE_EXTENSIONS',
+  /** Opareta fork: base64-encode form_data to get past on-prem firewalls */
+  EncodeFormDataBase64 = 'ENCODE_FORM_DATA_BASE64',
   /** @deprecated */
   EnableJavascriptControls = 'ENABLE_JAVASCRIPT_CONTROLS',
   EnableTemplateProcessing = 'ENABLE_TEMPLATE_PROCESSING',
